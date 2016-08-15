@@ -1,0 +1,161 @@
+<?php
+
+function dh_blocks_block_info()
+{
+    $blocks['founders'] = [
+        'info' => t('The founders of NPP VIUS'),
+        'cache' => DRUPAL_CACHE_GLOBAL
+    ];
+
+    return $blocks;
+}
+
+function dh_blocks_theme()
+{
+    return [
+        'founders' => [
+            'variables' => ['first_founder' => [], 'second_founder' => [],],
+            'template' => 'templates/feedback',
+        ],
+    ];
+}
+
+function dh_blocks_block_view($delta = '')
+{
+    switch ($delta) {
+        case 'founders':
+            $block['subject'] = t('Founders');
+            $block['content'] = [
+                '#title' => t('Founders'),
+                '#theme' => 'founders',
+                '#first_founder' => [
+                    'name' => variable_get('first_founder_name'),
+                    'avatar' => variable_get('first_founder_avatar_url'),
+                    'information' => variable_get('first_founder_information')
+                ],
+                '#second_founder' => [
+                    'name' => variable_get('second_founder_name'),
+                    'avatar' => variable_get('second_founder_avatar_url'),
+                    'information' => variable_get('second_founder_information')
+                ]
+            ];
+            break;
+    }
+
+    return $block;
+}
+
+function dh_blocks_block_configure($delta = '')
+{
+    $form = [];
+
+    switch ($delta) {
+        case 'founders':
+            $form['founders_fieldset'] = array(
+                '#type' => 'fieldset',
+                '#title' => t('Founders information'),
+                '#collapsible' => false
+            );
+
+            $form['founders_fieldset']['first_founder_fieldset'] = array(
+                '#type' => 'fieldset',
+                '#title' => t('First founder information'),
+                '#collapsible' => true,
+                '#collapsed' => true,
+            );
+
+            $form['founders_fieldset']['second_founder_fieldset'] = array(
+                '#type' => 'fieldset',
+                '#title' => t('Second founder information'),
+                '#collapsible' => true,
+                '#collapsed' => true,
+            );
+
+            $form['founders_fieldset']['first_founder_fieldset']['first_founder_name'] = array(
+                '#type' => 'textfield',
+                '#title' => t('Name', [], ['context' => 'founder']),
+                '#default_value' => variable_get('first_founder_name'),
+                '#size' => 60,
+                '#maxlength' => 128,
+                '#required' => TRUE,
+            );
+
+            $form['founders_fieldset']['first_founder_fieldset']['first_founder_information'] = array(
+                '#type' => 'textarea',
+                '#title' => t('Information'),
+                '#default_value' => variable_get('first_founder_information'),
+                '#required' => TRUE,
+            );
+
+            $form['founders_fieldset']['first_founder_fieldset']['first_founder_avatar_fid'] = array(
+                '#title' => t('Avatar'),
+                '#type' => 'managed_file',
+                '#description' => t('Upload founder\'s avatar'),
+                '#default_value' => variable_get('first_founder_avatar_fid'),
+                '#upload_location' => 'public://founders/',
+            );
+
+            $form['founders_fieldset']['second_founder_fieldset']['second_founder_name'] = array(
+                '#type' => 'textfield',
+                '#title' => t('Name', [], ['context' => 'founder']),
+                '#default_value' => variable_get('second_founder_name'),
+                '#size' => 60,
+                '#maxlength' => 128,
+                '#required' => TRUE,
+            );
+
+            $form['founders_fieldset']['second_founder_fieldset']['second_founder_information'] = array(
+                '#type' => 'textarea',
+                '#title' => t('Information'),
+                '#default_value' => variable_get('second_founder_information'),
+                '#required' => TRUE,
+            );
+
+            $form['founders_fieldset']['second_founder_fieldset']['second_founder_avatar_fid'] = array(
+                '#title' => t('Avatar'),
+                '#type' => 'managed_file',
+                '#description' => t('Upload founder\'s avatar'),
+                '#default_value' => variable_get('second_founder_avatar_fid'),
+                '#upload_location' => 'public://founders/',
+            );
+
+            break;
+    }
+
+    return $form;
+}
+
+function dh_blocks_block_save($delta = '', $edit = [])
+{
+    switch ($delta) {
+        case 'founders':
+            variable_set('first_founder_name', $edit['first_founder_name']);
+            variable_set('first_founder_information', $edit['first_founder_information']);
+            variable_set('first_founder_avatar_fid', $edit['first_founder_avatar_fid']);
+            variable_set('first_founder_avatar_url', dh_blocks_get_founder_avatar_by_fid($edit['first_founder_avatar_fid']));
+            variable_set('second_founder_name', $edit['second_founder_name']);
+            variable_set('second_founder_information', $edit['second_founder_information']);
+            variable_set('second_founder_avatar_fid', $edit['second_founder_avatar_fid']);
+            variable_set('second_founder_avatar_url', dh_blocks_get_founder_avatar_by_fid($edit['second_founder_avatar_fid']));
+            break;
+    }
+}
+
+/**
+ * @param $fid
+ * @return bool|string
+ */
+function dh_blocks_get_founder_avatar_by_fid($fid)
+{
+    $file = file_load($fid);
+    $file->status = FILE_STATUS_PERMANENT;
+    file_save($file);
+    $block = block_load('dh_blocks', 'founders');
+    file_usage_add($file, 'dh_blocks', 'block', $block->bid);
+
+    if ($file) {
+        return file_create_url($file->uri);
+    }
+
+    return false;
+}

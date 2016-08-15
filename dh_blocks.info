@@ -1,0 +1,6 @@
+name = Customize blocks
+description = Customize blocks
+package = Digital Hammer
+core = 7.x
+
+dependencies[] = block
